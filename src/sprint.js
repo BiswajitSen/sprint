@@ -1,6 +1,6 @@
 let dataSegment = [];
 
-const fetch = function(memLocation) {
+const fetchVal = function(memLocation) {
   return dataSegment[memLocation];
 };
 
@@ -9,9 +9,9 @@ const initialize = function(value, memLocation) {
 };
 
 const map = {
-  '0' : 'assign',
-  '1' : 'add',
-  '2' : 'sub'
+  '0': 'assign',
+  '1': 'add',
+  '2': 'sub'
 };
 
 const operations = {
@@ -20,36 +20,36 @@ const operations = {
   },
 
   add: function add(lhsCell, rhsCell, resultCell) {
-    const value = fetch(lhsCell) + fetch(rhsCell);
+    const value = fetchVal(lhsCell) + fetchVal(rhsCell);
     initialize(value, resultCell);
   },
 
   sub: function sub(lhsCell, rhsCell, resultCell) {
-    const value = fetch(lhsCell) - fetch(rhsCell);
+    const value = fetchVal(lhsCell) - fetchVal(rhsCell);
     initialize(value, resultCell);
   }
 
 };
 
 const parse = function(text) {
-  return text.map(function(character){ 
+  return text.map(function(character) {
     return +character;
   });
 };
 
 const initializeCells = function(code) {
-  dataSegment = [...code]
+  dataSegment = [...code];
 };
 
 const generateCode = function(text) {
   const code = text.split('\n');
-  return code.map(function(element){
+  return code.map(function(element) {
     return parse(element.split(' '));
   });
 };
 
 const execute = function(code) {
-  code.reduce(function(dataSegment, currentLine){
+  code.reduce(function(dataSegment, currentLine) {
     const [instruction, ...argument] = currentLine;
     operations[map[instruction]](...argument);
 
@@ -62,7 +62,7 @@ const main = function() {
   const code = generateCode(inputText);
 
   initializeCells(code);
-  console.log(dataSegment)
+  console.log(dataSegment);
   execute(code);
   console.log(dataSegment);
 };
