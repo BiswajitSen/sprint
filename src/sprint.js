@@ -95,6 +95,9 @@ const main = function() {
   load(code, memory);
   execute(memory);
   console.log(memory);
+  return 0;
 };
 
 main();
+
+exports.main = main;
