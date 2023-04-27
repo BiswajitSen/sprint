@@ -1,53 +1,53 @@
-const assign = function(pc, memory) {
-  const data = memory[pc + 1];
-  const index = memory[pc + 2];
-  memory[index] = data;
+const assign = function({pc, memory, halt}) {
+  const [data, cell] = memory.slice(pc + 1, pc + 3);
+  memory[cell] = data;
 
-  return pc + 3;
+  return {memory, halt, pc: pc + 3};
 };
 
-const add = function(pc, memory) {
-  const resIndex = memory[pc + 3];
-  const addendIndex = memory[pc + 1];
-  const augendIndex = memory[pc + 2];
-  memory[resIndex] = memory[augendIndex] + memory[addendIndex];
+const add = function({pc, memory, halt}) {
+  const [addendCell, augendCell, resCell] = memory.slice(pc + 1, pc + 4); 
+  memory[resCell] = memory[augendCell] + memory[addendCell];
 
-  return pc + 4;
+  return {memory, halt, pc: pc + 4};
 };
 
-const sub = function(pc, memory) {
-  const resIndex = memory[pc + 3];
-  const minuendIndex = memory[pc + 1];
-  const subtrahendIndex = memory[pc + 2];
-  memory[resIndex] = memory[minuendIndex] - memory[subtrahendIndex];
+const sub = function({pc, memory, halt}) {
+  const [minuendCell, subtrahendCell, resCell] = memory.slice(pc + 1, pc + 4);
+  memory[resCell] = memory[minuendCell] - memory[subtrahendCell];
 
-  return pc + 4;
+  return {memory, halt, pc: pc + 4};
 };
 
-const jump = function(pc, memory) {
-  return memory[pc + 1];
+const jump = function({pc, memory, halt}) {
+  const jumpLocation = memory[pc + 1];
+  return {memory, halt, pc: jumpLocation};
 };
 
-const jumpEqual = function(pc, memory) {
-  const lhs = memory[pc + 1];
-  const rhs = memory[pc + 2];
+const jumpEqual = function({pc, memory, halt}) {
+  const [lhs, rhs] = memory.slice(pc + 1, pc + 3);
+  let jumpLocation = pc + 4;
 
-  if (memory[lhs] === memory[rhs]) {
-    return memory[pc + 3];
+  if(memory[lhs] === memory[rhs]) {
+    jumpLocation = memory[pc + 3];
   }
 
-  return pc + 4;
+  return {memory, halt, pc: jumpLocation};
 };
 
-const jumpLess = function(pc, memory) {
-  const lhs = memory[pc + 1];
-  const rhs = memory[pc + 2];
+const jumpLess = function({pc, memory, halt}) {
+  const [lhs, rhs] = memory.slice(pc + 1, pc + 3);
+  let jumpLocation = pc + 4;
 
-  if (memory[lhs] < memory[rhs]) {
-    return memory[pc + 3];
+  if(memory[lhs] < memory[rhs]) {
+    jumpLocation = memory[pc + 3];
   }
 
-  return pc + 4;
+  return {memory, halt, pc: jumpLocation};
+};
+
+const halt = function({pc, memory}) {
+  return {memory, halt: true, pc: pc + 1};
 };
 
 const opCode = {
@@ -56,48 +56,79 @@ const opCode = {
   '2': sub,
   '3': jump,
   '4': jumpEqual,
-  '5': jumpLess 
+  '5': jumpLess,
+  '9': halt
 };
 
-const execute = function(memory) {
-  let pc = 0;
+const generateTokens = function(code) {
+  const symbols = code.split(" ");
 
-  while(true) {
-    const currentOperation = memory[pc];
-    if(currentOperation === 9) {
-      return 0;
+  return symbols.map(function(symbol) {
+    if(symbol.includes(':')) {
+      const fields = symbol.split(':');
+
+      return {value: fields[1], label: fields[0]};
     }
 
-    pc = opCode[currentOperation](pc, memory);
-  }
-
-};
-
-const load = function(code, memory) {
-  return code.map(function(token) {
-    memory.push(token);
+    return {value: symbol};
   });
 };
 
-const main = function() {
-  const memory = [];
-  const code = [
-    0, 24, 100,
-    0, 5, 101,
-    0, 0, 102,
-    0, 0, 103,
-    5, 100, 103, 22,
-    1, 101, 103, 103,
-    3, 12,
-    2, 103, 101, 103,
-    2, 100, 103, 102,
-    9 ];
-  load(code, memory);
-  execute(memory);
-  console.log(memory);
-  return 0;
+const generateSymbolTable = function(tokens) {
+  return tokens.reduce(function(symbolTable, token, index) {
+    if('label' in token) {
+      symbolTable[token.label] = index;
+      return symbolTable;
+    }
+
+    return symbolTable;
+  }, {});
 };
 
-main();
+const generateCode = function(tokens, symbolTable) {
+  return tokens.reduce(function(executableCode, token) {
+    if(token.value in symbolTable) {
+      return [...executableCode, symbolTable[token.value]];
+    }
+
+    return [...executableCode, +token.value];
+  }, []);
+};
+
+const load = function(code) {
+  const tokens = generateTokens(code);
+  const symbolTable = generateSymbolTable(tokens);
+  const executableCode = generateCode(tokens, symbolTable);
+  return executableCode;
+};
+
+const execute = function(state) {
+  while(!state.halt) {
+    const {memory, pc} = state;
+    const lookUp = memory[pc];
+    const currentOperation = opCode[lookUp];
+
+    state = currentOperation(state);
+  }
+
+  return state;
+};
+
+const display = function(state) {
+  console.log(state.join(' | '));
+};
+
+const main = function() {
+  let memory = [];
+  const code = "3 main main:0 45 100 0 55 101 1 100 101 102 9";
+  memory = load(code, memory);
+  const pc = 0;
+  const halt = false;
+
+  const state = {memory, pc, halt};
+  const newState = execute(state);
+  display(newState.memory);
+  return 0;
+};
 
 exports.main = main;
