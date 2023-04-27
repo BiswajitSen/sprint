@@ -1,16 +1,13 @@
-const testing = require('../lib/test.js')
-const source = require('../src/sprint.js')
-const displayTestSummary = testing.displayTestSummary;
-const assert = testing.assert;
-const title = testing.renderTitle;
+const {deepStrictEqual} = require('assert');
+const {describe, it} = require('node:test');
+const {add, sub, jump} = require('../src/sprint.js');
 
-const test = function(){
-  title('Testing test framework');
+describe('sprint operations', function(){
 
-  assert({expected: 1, actual: source.main()}, '1 === 1 Should pass');
-  assert({expected: 0, actual: source.main()}, '2 === 0 Should fail');
-  displayTestSummary();
-};
+  describe('asssignment operation', function(){
+    it("should assign the specified value in specific cell." function(){ 
+      deepStrictEqual([], [])
+    });
+  });
 
-test();
-
+});
