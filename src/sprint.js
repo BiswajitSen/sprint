@@ -75,8 +75,9 @@ const generateTokens = function(code) {
 };
 
 const generateSymbolTable = function(tokens) {
+  const label = 'label';
   return tokens.reduce(function(symbolTable, token, index) {
-    if('label' in token) {
+    if(label in token) {
       symbolTable[token.label] = index;
       return symbolTable;
     }
@@ -87,11 +88,7 @@ const generateSymbolTable = function(tokens) {
 
 const generateCode = function(tokens, symbolTable) {
   return tokens.reduce(function(executableCode, token) {
-    if(token.value in symbolTable) {
-      return [...executableCode, symbolTable[token.value]];
-    }
-
-    return [...executableCode, +token.value];
+    return [...executableCode, (token.value in symbolTable) ? symbolTable[token.value] : +token.value];
   }, []);
 };
 
@@ -106,9 +103,9 @@ const execute = function(state) {
   while(!state.halt) {
     const {memory, pc} = state;
     const lookUp = memory[pc];
-    const currentOperation = opCode[lookUp];
+    const execute = opCode[lookUp];
 
-    state = currentOperation(state);
+    state = execute(state);
   }
 
   return state;
@@ -118,17 +115,19 @@ const display = function(state) {
   console.log(state.join(' | '));
 };
 
-const main = function() {
-  let memory = [];
-  const code = "3 main main:0 45 100 0 55 101 1 100 101 102 9";
-  memory = load(code, memory);
+const initializeState = function(code) {
+  const memory = load(code);
   const pc = 0;
   const halt = false;
+  return {memory, pc, halt};
+}; 
 
-  const state = {memory, pc, halt};
+const main = function() {
+  const code = "3 main main:0 45 14 0 55 15 1 100 101 16 9";
+  const state = initializeState(code);
   const newState = execute(state);
+
   display(newState.memory);
-  return 0;
 };
 
-exports.main = main;
+exports.execute = execute;
